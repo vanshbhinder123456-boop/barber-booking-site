@@ -1,0 +1,521 @@
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Search,
+  MapPin,
+  Tag,
+  Store,
+  Ticket,
+  Filter,
+  Crown,
+  ShieldCheck,
+  Bell,
+  Zap,
+  Check,
+  CreditCard,
+  Lock,
+  TrendingUp,
+  Star,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const sampleCoupons = [
+  {
+    id: 1,
+    title: "20% Off Entire Order",
+    store: "Target",
+    city: "Los Angeles",
+    state: "CA",
+    category: "Retail",
+    code: "SAVE20US",
+    expires: "Apr 30, 2026",
+    description: "Valid online and at participating U.S. locations.",
+    verified: true,
+    premium: false,
+    savings: "$24 avg savings",
+  },
+  {
+    id: 2,
+    title: "$10 Off $50",
+    store: "Best Buy",
+    city: "San Diego",
+    state: "CA",
+    category: "Electronics",
+    code: "US10OFF",
+    expires: "May 5, 2026",
+    description: "Applies to eligible electronics and accessories.",
+    verified: true,
+    premium: true,
+    savings: "$10 instant discount",
+  },
+  {
+    id: 3,
+    title: "Free Delivery on $25+",
+    store: "DoorDash",
+    city: "New York",
+    state: "NY",
+    category: "Food",
+    code: "FREESHIP25",
+    expires: "Apr 20, 2026",
+    description: "Popular metro deal with frequent restocks.",
+    verified: true,
+    premium: false,
+    savings: "$6 avg savings",
+  },
+  {
+    id: 4,
+    title: "Buy 1 Get 1 Free",
+    store: "Subway",
+    city: "Chicago",
+    state: "IL",
+    category: "Food",
+    code: "BOGOFOOTLONG",
+    expires: "Apr 18, 2026",
+    description: "Participating stores only. Limited time campaign.",
+    verified: true,
+    premium: true,
+    savings: "$8 avg savings",
+  },
+  {
+    id: 5,
+    title: "15% Off First Order",
+    store: "Nike",
+    city: "Houston",
+    state: "TX",
+    category: "Fashion",
+    code: "WELCOME15",
+    expires: "May 10, 2026",
+    description: "New customer welcome discount.",
+    verified: true,
+    premium: false,
+    savings: "$18 avg savings",
+  },
+  {
+    id: 6,
+    title: "$25 Off $100",
+    store: "Macy's",
+    city: "Miami",
+    state: "FL",
+    category: "Retail",
+    code: "SAVE25",
+    expires: "May 1, 2026",
+    description: "Department store discount with limited exclusions.",
+    verified: true,
+    premium: true,
+    savings: "$25 instant discount",
+  },
+];
+
+const STRIPE_MONTHLY_LINK = "https://buy.stripe.com/test_monthly_placeholder";
+const STRIPE_YEARLY_LINK = "https://buy.stripe.com/test_yearly_placeholder";
+
+const categories = ["All", "Retail", "Electronics", "Food", "Fashion"];
+const states = ["All", "CA", "NY", "IL", "TX", "FL"];
+const stats = [
+  { label: "Active deals", value: "48,000+" },
+  { label: "U.S. stores", value: "12,500+" },
+  { label: "Verified daily", value: "24/7" },
+  { label: "Avg. user savings", value: "$173/mo" },
+];
+
+function CouponCard({ coupon, isSubscribed }: { coupon: (typeof sampleCoupons)[number]; isSubscribed: boolean }) {
+  const locked = coupon.premium && !isSubscribed;
+
+  return (
+    <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+      <div className="h-1 w-full bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-400" />
+      <CardHeader className="space-y-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              {coupon.verified && (
+                <Badge className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 hover:bg-emerald-100">
+                  <ShieldCheck className="mr-1 h-3 w-3" /> Verified
+                </Badge>
+              )}
+              {coupon.premium && (
+                <Badge className="rounded-full bg-amber-100 px-3 py-1 text-amber-700 hover:bg-amber-100">
+                  <Crown className="mr-1 h-3 w-3" /> Premium
+                </Badge>
+              )}
+            </div>
+            <CardTitle className="text-xl font-semibold tracking-tight">{coupon.title}</CardTitle>
+            <div className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
+              <Store className="h-4 w-4" />
+              <span>{coupon.store}</span>
+            </div>
+          </div>
+          <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs">
+            {coupon.category}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4 pt-0">
+        <p className="text-sm leading-6 text-neutral-600">{coupon.description}</p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-neutral-50 p-3">
+            <div className="mb-1 text-xs text-neutral-500">Location</div>
+            <div className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+              <MapPin className="h-4 w-4" />
+              {coupon.city}, {coupon.state}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-neutral-50 p-3">
+            <div className="mb-1 text-xs text-neutral-500">Savings</div>
+            <div className="text-sm font-medium text-neutral-800">{coupon.savings}</div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+              <Ticket className="h-4 w-4" /> Coupon Code
+            </div>
+            <div className="flex items-center gap-2 text-xs text-neutral-500">
+              <Tag className="h-4 w-4" /> Expires {coupon.expires}
+            </div>
+          </div>
+
+          {locked ? (
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-neutral-900 p-3 text-white">
+              <div className="flex items-center gap-2 text-sm">
+                <Lock className="h-4 w-4" /> Members only code
+              </div>
+              <Button size="sm" className="rounded-full bg-white text-neutral-900 hover:bg-neutral-200">
+                Unlock
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3">
+              <div className="font-mono text-sm font-semibold tracking-[0.2em] text-neutral-900">{coupon.code}</div>
+              <Button size="sm" className="rounded-full">Copy Code</Button>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function USCouponFinderMVP() {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
+  const [state, setState] = useState("All");
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("dealflow_subscription_active");
+    if (stored === "true") setIsSubscribed(true);
+  }, []);
+
+  const filteredCoupons = useMemo(() => {
+    return sampleCoupons.filter((coupon) => {
+      const matchesQuery =
+        coupon.title.toLowerCase().includes(query.toLowerCase()) ||
+        coupon.store.toLowerCase().includes(query.toLowerCase()) ||
+        coupon.city.toLowerCase().includes(query.toLowerCase()) ||
+        coupon.state.toLowerCase().includes(query.toLowerCase()) ||
+        coupon.category.toLowerCase().includes(query.toLowerCase()) ||
+        coupon.code.toLowerCase().includes(query.toLowerCase());
+
+      const matchesCategory = category === "All" || coupon.category === category;
+      const matchesState = state === "All" || coupon.state === state;
+
+      return matchesQuery && matchesCategory && matchesState;
+    });
+  }, [query, category, state]);
+
+  const planPrice = billing === "monthly" ? "$20" : "$200";
+  const planLabel = billing === "monthly" ? "/month" : "/year";
+  const checkoutLink = billing === "monthly" ? STRIPE_MONTHLY_LINK : STRIPE_YEARLY_LINK;
+
+  const handleCheckout = () => {
+    window.open(checkoutLink, "_blank", "noopener,noreferrer");
+  };
+
+  const enablePreviewMembership = () => {
+    window.localStorage.setItem("dealflow_subscription_active", "true");
+    setIsSubscribed(true);
+  };
+
+  const signOutMembership = () => {
+    window.localStorage.removeItem("dealflow_subscription_active");
+    setIsSubscribed(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-100 text-neutral-900">
+      <div className="mx-auto max-w-7xl p-4 md:p-6 lg:p-8">
+        <div className="overflow-hidden rounded-[32px] bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-800 text-white shadow-2xl">
+          <div className="border-b border-white/10 px-6 py-5 md:px-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
+                  <Ticket className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold tracking-tight">DealFlow</div>
+                  <div className="text-sm text-white/70">Premium U.S. coupon intelligence</div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge className="rounded-full bg-white/10 px-4 py-2 text-white hover:bg-white/10">
+                  <ShieldCheck className="mr-2 h-4 w-4" /> Verified daily
+                </Badge>
+                <Button
+                  variant="secondary"
+                  className="rounded-full bg-white text-neutral-900 hover:bg-neutral-200"
+                  onClick={isSubscribed ? signOutMembership : enablePreviewMembership}
+                >
+                  {isSubscribed ? "Sign Out Member" : "Preview Membership"}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-8 px-6 py-10 md:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:px-10 lg:py-12">
+            <div>
+              <Badge className="mb-4 rounded-full bg-white/10 px-4 py-2 text-white hover:bg-white/10">
+                <Zap className="mr-2 h-4 w-4" /> Members unlock premium codes instantly
+              </Badge>
+              <h1 className="max-w-3xl text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+                A real coupon app people would actually pay for.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-white/75 md:text-lg">
+                Search nationwide deals, unlock premium promo codes, save favorite stores, and get alerts before the best coupons expire.
+              </p>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {stats.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                    <div className="text-2xl font-bold">{item.value}</div>
+                    <div className="mt-1 text-sm text-white/65">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] bg-white p-5 text-neutral-900 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-neutral-500">Premium Access</div>
+                  <div className="mt-1 text-2xl font-bold tracking-tight">Choose your plan</div>
+                </div>
+                <div className="rounded-full bg-neutral-100 p-1">
+                  <button
+                    onClick={() => setBilling("monthly")}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                      billing === "monthly" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                    }`}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => setBilling("yearly")}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                      billing === "yearly" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                    }`}
+                  >
+                    Yearly
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-[28px] bg-neutral-950 p-6 text-white">
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <Crown className="h-4 w-4" /> DealFlow Premium
+                </div>
+                <div className="mt-3 flex items-end gap-2">
+                  <div className="text-5xl font-bold leading-none">{planPrice}</div>
+                  <div className="pb-1 text-white/65">{planLabel}</div>
+                </div>
+                <div className="mt-2 text-sm text-white/60">
+                  {billing === "yearly" ? "Save $40 compared to monthly billing." : "Full access billed every month."}
+                </div>
+
+                <div className="mt-6 space-y-3 text-sm">
+                  {[
+                    "Premium nationwide coupon codes",
+                    "Members-only instant unlocks",
+                    "Store alerts and expiry reminders",
+                    "Best-deal ranking and verification badges",
+                    "Saved favorites and private watchlist",
+                  ].map((feature) => (
+                    <div key={feature} className="flex items-center gap-3">
+                      <Check className="h-4 w-4 text-emerald-400" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  <Input
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="Email for checkout"
+                    className="rounded-2xl border-0 bg-white/10 text-white placeholder:text-white/40"
+                  />
+                  <Button
+                    className="w-full rounded-2xl bg-white text-neutral-900 hover:bg-neutral-200"
+                    onClick={handleCheckout}
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" /> Subscribe with Stripe
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-600">
+                Replace the placeholder Stripe links with your real monthly and yearly checkout links. After successful payment, Stripe should redirect to your success page and your backend should mark the user as active.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-6">
+            <div className="rounded-[28px] bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">Find the best U.S. deals fast</h2>
+                  <p className="mt-2 text-sm text-neutral-600">
+                    Free users can browse. Premium members unlock premium codes, alerts, and deeper deal access.
+                  </p>
+                </div>
+                <Badge className="rounded-full bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-900">
+                  {isSubscribed ? "Premium unlocked" : "Free preview mode"}
+                </Badge>
+              </div>
+
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                <div className="relative md:col-span-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search store, city, state, code..."
+                    className="rounded-2xl border-neutral-200 pl-9"
+                  />
+                </div>
+
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="rounded-2xl border-neutral-200">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={state} onValueChange={setState}>
+                  <SelectTrigger className="rounded-2xl border-neutral-200">
+                    <SelectValue placeholder="State" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {states.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {filteredCoupons.map((coupon) => (
+                <CouponCard key={coupon.id} coupon={coupon} isSubscribed={isSubscribed} />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <Alert className="rounded-[28px] border-0 bg-amber-50 text-amber-900 shadow-sm">
+              <AlertDescription className="leading-6">
+                This version is Stripe-ready in the UI. To make payments fully real, create two Stripe payment links or Stripe Checkout sessions, then connect a backend webhook that marks paid users as active.
+              </AlertDescription>
+            </Alert>
+
+            <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl tracking-tight">Why people would pay</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm text-neutral-600">
+                <div className="flex items-start gap-3 rounded-2xl bg-neutral-50 p-4">
+                  <Bell className="mt-0.5 h-4 w-4" />
+                  <div>
+                    <div className="font-medium text-neutral-900">Expiry alerts</div>
+                    <div>Get notified before top coupons disappear.</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-2xl bg-neutral-50 p-4">
+                  <TrendingUp className="mt-0.5 h-4 w-4" />
+                  <div>
+                    <div className="font-medium text-neutral-900">Best-deal ranking</div>
+                    <div>Show the strongest savings first, not random junk codes.</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-2xl bg-neutral-50 p-4">
+                  <Star className="mt-0.5 h-4 w-4" />
+                  <div>
+                    <div className="font-medium text-neutral-900">Premium-only codes</div>
+                    <div>Lock the best codes behind the subscription paywall.</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[28px] border-0 bg-neutral-900 text-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl tracking-tight">Monetization setup</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-white/75">
+                <div>• Monthly plan: <span className="font-semibold text-white">$20/month</span></div>
+                <div>• Yearly plan: <span className="font-semibold text-white">$200/year</span></div>
+                <div>• Stripe Checkout for payments</div>
+                <div>• Stripe webhook to activate paid users</div>
+                <div>• Customer portal for cancel and billing</div>
+                <div>• Lock premium deals for non-members</div>
+                <div>• Add affiliate links for extra revenue</div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl tracking-tight">What to build next</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-neutral-600">
+                <div>1. User sign up and login</div>
+                <div>2. Stripe subscriptions and billing portal</div>
+                <div>3. Backend webhook to turn premium on after payment</div>
+                <div>4. Database for users, plans, and coupon access</div>
+                <div>5. Admin dashboard to upload and verify coupons</div>
+                <div>6. Real coupon scraping and store feeds</div>
+                <div>7. Mobile app version after website launch</div>
+                <div className="mt-3 rounded-2xl bg-neutral-100 p-3 font-mono text-xs leading-6 text-neutral-700">
+                  Backend needed:
+POST /api/create-checkout-session
+POST /api/stripe-webhook
+GET /api/me/subscription
+PATCH /api/customer-portal
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
